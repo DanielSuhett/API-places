@@ -6,9 +6,7 @@ module.exports = app => {
         handleError(err, res);
     });
     
-    app.listen(process.env.PORT || 3001, process.env.HOST || 'localhost', () => {
-        console.log(`Places API on ${process.env.HOST || 'localhost'}:${process.env.PORT || 3001 }`)
+    app.listen(process.env.PORT || 3001, () => {
+        console.log(`Places API on 'localhost':${process.env.PORT || 3001 }`)
     });
-
-
 }
