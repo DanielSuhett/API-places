@@ -10,7 +10,7 @@ router.get("/:id", controller.getPlace);
 
 router.delete('/:id', controller.deletePlace);
 
-router.put("/:id", controller.updatePlace);
+router.put("/:id", multer(multerConfig).single('file'), controller.updatePlace);
 
 router.post("/create", multer(multerConfig).single('file'), controller.createPlace);
 

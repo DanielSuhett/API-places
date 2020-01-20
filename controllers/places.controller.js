@@ -1,19 +1,21 @@
 const db = require('../database/db');
 const { ErrorHandler } = require('../config/error');
-const { getVotes, removeStorageFile } = require('./services')
+const { getVotes, removeStorageFile, updateDiff } = require('./services')
 
 exports.createPlace = async (req, res, next) => {
   try {
     const { place_name } = req.body;
+
     const { originalname: name, size, key, location: url = "", mimetype: type } = req.file;
 
     const image = JSON.stringify({
       name,
       size,
-      key: req.file.key,
-      url: req.file.location,
-      type: req.file.mimetype
+      url,
+      key,
+      type
     });
+
 
     if (!place_name && !image)
       throw new ErrorHandler(401, "Para criar um novo lugar é necessário seu nome e o anexo de sua imagem!");
@@ -109,12 +111,22 @@ exports.getPlace = async (req, res, next) => {
 
 exports.updatePlace = async (req, res, next) => {
   try {
-    const { place_name, image, votes } = req.body;
+    console.log(req.file)
+    const { place_name } = req.body;
+    
+    const { originalname: name, size, key, location: url = "", mimetype: type } = req.file;
+    
+    const image = { name, size, url, key, type };
+
+    console.log(image);
+
+    const payload = await updateDiff(req.params.id, req.userId, key);
+
 
     const updateResult = () => {
       return new Promise((resolve, reject) => {
-        db.query('UPDATE place SET place_name = ?, image = ?, votes = ? WHERE _id = ? AND userId = ?',
-          [place_name, JSON.stringify(image), votes, req.params.id, req.userId],
+        db.query('UPDATE place SET ? WHERE _id = ? AND userId = ?',
+          [{ place_name, image: JSON.stringify(image) }, req.params.id, req.userId],
           (err, result) => {
             if (err)
               reject(new ErrorHandler(500, err));
@@ -125,11 +137,6 @@ exports.updatePlace = async (req, res, next) => {
     }
 
     const result = await updateResult();
-    // if(process.env.STORAGE_TYPE === 's3'){
-    //   return 
-    // } else {
-
-    // }
 
     if (result.changedRows)
       res.status(200).send({
@@ -197,7 +204,7 @@ exports.deletePlace = async (req, res, next) => {
           });
       })
     }
-    
+
     await removeStorageFile(req.params.id, req.userId);
     const result = await deletePlace();
 
